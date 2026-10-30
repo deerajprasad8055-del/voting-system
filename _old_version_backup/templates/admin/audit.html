@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+
+{% block title %}System Audit Trail — {{ app_name }}{% endblock %}
+
+{% block content %}
+<div style="margin-bottom: 2rem;">
+  <div style="display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 1rem;">
+    <div>
+      <h1 style="font-size: 2rem; font-weight: 700; margin-bottom: 0.25rem;">🔍 System Audit Trail</h1>
+      <p style="color: var(--text-muted);">
+        Immutable event logging for authentication, lifecycle transitions, vote submission events, and integrity checks.
+      </p>
+    </div>
+    <div>
+      <a href="{{ url_for('admin.dashboard') }}" class="btn btn-secondary">
+        ← Back to Dashboard
+      </a>
+    </div>
+  </div>
+</div>
+
+<div class="card" style="margin-bottom: 2rem;">
+  <form method="GET" action="{{ url_for('admin.audit_logs') }}" style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap;">
+    <div style="flex: 1; min-width: 240px;">
+      <input type="text" name="action" class="form-control" placeholder="Filter by action (e.g. VOTE_CAST, LOGIN, ELECTION)..." value="{{ action_filter }}">
+    </div>
+    <button type="submit" class="btn btn-primary">Filter Logs</button>
+    {% if action_filter %}
+      <a href="{{ url_for('admin.audit_logs') }}" class="btn btn-secondary">Clear Filter</a>
+    {% endif %}
+  </form>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <h3 class="card-title">Audit Log Entries (Latest {{ logs | length }})</h3>
+    <span style="font-size: 0.85rem; color: var(--text-dim);">UTC Timestamps</span>
+  </div>
+
+  {% if not logs %}
+    <div style="text-align: center; padding: 2.5rem 0; color: var(--text-muted);">
+      No audit records found matching your filter criteria.
+    </div>
+  {% else %}
+    <div class="table-responsive">
+      <table class="table" style="font-size: 0.9rem;">
+        <thead>
+          <tr>
+            <th>Timestamp (UTC)</th>
+            <th>Action</th>
+            <th>Actor</th>
+            <th>IP Address</th>
+            <th>Event Details</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for log in logs %}
+            <tr>
+              <td style="font-family: var(--font-mono); font-size: 0.8rem; color: var(--text-dim); white-space: nowrap;">
+                {{ log.timestamp.strftime('%Y-%m-%d %H:%M:%S') }}
+              </td>
+              <td>
+                <span class="hash-badge" style="font-size: 0.75rem; color: #a5b4fc; background: rgba(99, 102, 241, 0.1); border-color: rgba(99, 102, 241, 0.25);">
+                  {{ log.action }}
+                </span>
+              </td>
+              <td style="font-size: 0.85rem; color: #fff;">
+                {{ log.actor_email or 'System/Anonymous' }}
+                {% if log.actor_id %}
+                  <span style="color: var(--text-dim); font-size: 0.75rem; font-family: var(--font-mono);">(#{{ log.actor_id }})</span>
+                {% endif %}
+              </td>
+              <td style="font-family: var(--font-mono); font-size: 0.8rem; color: var(--text-muted);">
+                {{ log.ip_address or '127.0.0.1' }}
+              </td>
+              <td style="font-size: 0.85rem; color: var(--text-muted); word-break: break-word;">
+                {{ log.details or '-' }}
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+
+{% block title %}Ballot Receipt — {{ app_name }}{% endblock %}
+
+{% block content %}
+<div style="max-width: 680px; margin: 1rem auto;">
+  <div class="receipt-box">
+    <div class="receipt-watermark">✓</div>
+    
+    <div style="text-align: center; margin-bottom: 2rem;">
+      <div style="font-size: 3rem; margin-bottom: 0.5rem;">🎉</div>
+      <h1 style="font-size: 1.75rem; font-weight: 700; margin-bottom: 0.25rem;">Ballot Successfully Cast!</h1>
+      <p style="color: var(--text-muted);">
+        Your vote has been encrypted and permanently linked into the immutable ballot chain.
+      </p>
+    </div>
+
+    <div style="background: rgba(0, 0, 0, 0.4); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 1.5rem; margin-bottom: 2rem;">
+      <div style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--accent); margin-bottom: 0.5rem; font-weight: 600;">
+        Official Ballot Tracking Hash (SHA-256)
+      </div>
+      
+      <div style="display: flex; gap: 0.5rem; align-items: center; margin-bottom: 0.75rem;">
+        <input type="text" id="ballotHashInput" class="form-control mono" value="{{ ballot.ballot_hash }}" readonly style="background: #000; color: #38bdf8;">
+        <button type="button" class="btn btn-secondary btn-sm" data-copy-target="ballotHashInput">
+          Copy
+        </button>
+      </div>
+      
+      <p style="color: var(--text-dim); font-size: 0.82rem;">
+        Save this hash! You can use it at any time to verify that your ballot is intact inside the election chain without exposing your vote choice.
+      </p>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; font-size: 0.9rem; margin-bottom: 2rem;">
+      <div style="background: rgba(255, 255, 255, 0.02); padding: 0.85rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
+        <div style="color: var(--text-dim); font-size: 0.78rem;">Election</div>
+        <div style="font-weight: 600; color: #fff;">{{ election.title }}</div>
+      </div>
+      <div style="background: rgba(255, 255, 255, 0.02); padding: 0.85rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
+        <div style="color: var(--text-dim); font-size: 0.78rem;">Timestamp (UTC)</div>
+        <div style="font-weight: 600; color: #fff;">{{ ballot.created_at.strftime('%Y-%m-%d %H:%M:%S UTC') }}</div>
+      </div>
+      <div style="background: rgba(255, 255, 255, 0.02); padding: 0.85rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
+        <div style="color: var(--text-dim); font-size: 0.78rem;">Ballot Chain ID</div>
+        <div style="font-weight: 600; color: #fff; font-family: var(--font-mono);">#{{ ballot.id }}</div>
+      </div>
+      <div style="background: rgba(255, 255, 255, 0.02); padding: 0.85rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
+        <div style="color: var(--text-dim); font-size: 0.78rem;">Previous Block Hash</div>
+        <div style="font-weight: 600; color: #94a3b8; font-family: var(--font-mono); font-size: 0.8rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+          {{ ballot.prev_hash }}
+        </div>
+      </div>
+    </div>
+
+    <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
+      <a href="{{ url_for('voter.verify') }}" class="btn btn-primary">
+        🔍 Verify in Public Chain
+      </a>
+      <a href="{{ url_for('voter.dashboard') }}" class="btn btn-secondary">
+        Return to Dashboard
+      </a>
+    </div>
+  </div>
+</div>
+{% endblock %}

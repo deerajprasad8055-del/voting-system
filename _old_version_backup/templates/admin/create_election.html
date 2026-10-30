@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+
+{% block title %}Create New Election — {{ app_name }}{% endblock %}
+
+{% block content %}
+<div style="max-width: 760px; margin: 0 auto;">
+  <div style="margin-bottom: 1.5rem;">
+    <a href="{{ url_for('admin.dashboard') }}" style="color: var(--text-muted); text-decoration: none; font-size: 0.9rem;">
+      ← Back to Admin Dashboard
+    </a>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <h2 class="card-title">🏛️ Create New Election</h2>
+      <span class="badge badge-draft">Draft Mode</span>
+    </div>
+
+    <form method="POST" action="{{ url_for('admin.create_election') }}">
+      {{ form.hidden_tag() }}
+
+      <div class="form-group">
+        {{ form.title.label(class="form-label") }}
+        {{ form.title(class="form-control", placeholder="e.g. 2026 Presidential & Technology Council Election", autofocus=true) }}
+        {% for error in form.title.errors %}
+          <div class="form-error">{{ error }}</div>
+        {% endfor %}
+      </div>
+
+      <div class="form-group">
+        {{ form.description.label(class="form-label") }}
+        {{ form.description(class="form-control", placeholder="State election purpose, rules, and eligibility requirements...") }}
+        {% for error in form.description.errors %}
+          <div class="form-error">{{ error }}</div>
+        {% endfor %}
+      </div>
+
+      <div class="grid-2">
+        <div class="form-group">
+          {{ form.start_time.label(class="form-label") }}
+          {{ form.start_time(class="form-control") }}
+          {% for error in form.start_time.errors %}
+            <div class="form-error">{{ error }}</div>
+          {% endfor %}
+        </div>
+
+        <div class="form-group">
+          {{ form.end_time.label(class="form-label") }}
+          {{ form.end_time(class="form-control") }}
+          {% for error in form.end_time.errors %}
+            <div class="form-error">{{ error }}</div>
+          {% endfor %}
+        </div>
+      </div>
+
+      <!-- Key Configuration Section -->
+      <div style="background: rgba(15, 23, 42, 0.7); border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 1.25rem; margin-bottom: 1.5rem;">
+        <h3 style="font-size: 1.05rem; color: #fff; margin-bottom: 0.5rem;">🔑 RSA-2048 Asymmetric Keypair Configuration</h3>
+        <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1.25rem;">
+          Ballots will be encrypted with the Election's Public Key. The Private Key is <strong>never stored in the database</strong>.
+        </p>
+
+        <div class="form-group">
+          {{ form.key_mode.label(class="form-label") }}
+          {{ form.key_mode(class="form-control", id="key_mode") }}
+          {% for error in form.key_mode.errors %}
+            <div class="form-error">{{ error }}</div>
+          {% endfor %}
+        </div>
+
+        <!-- Generate Key Option -->
+        <div id="generate_key_fields">
+          <div class="grid-2">
+            <div class="form-group">
+              {{ form.passphrase.label(class="form-label") }}
+              {{ form.passphrase(class="form-control", placeholder="Passphrase for private key") }}
+              {% for error in form.passphrase.errors %}
+                <div class="form-error">{{ error }}</div>
+              {% endfor %}
+            </div>
+
+            <div class="form-group">
+              {{ form.passphrase_confirm.label(class="form-label") }}
+              {{ form.passphrase_confirm(class="form-control", placeholder="Repeat passphrase") }}
+              {% for error in form.passphrase_confirm.errors %}
+                <div class="form-error">{{ error }}</div>
+              {% endfor %}
+            </div>
+          </div>
+          <div class="form-help">The generated private key will be encrypted with this passphrase and presented for you to save.</div>
+        </div>
+
+        <!-- Paste Key Option -->
+        <div id="paste_key_fields" style="display: none;">
+          <div class="form-group">
+            {{ form.public_key_pem.label(class="form-label") }}
+            {{ form.public_key_pem(class="form-control mono", rows=6, placeholder="-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8A...\n-----END PUBLIC KEY-----") }}
+            {% for error in form.public_key_pem.errors %}
+              <div class="form-error">{{ error }}</div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+
+      <div style="margin-top: 1.5rem;">
+        {{ form.submit(class="btn btn-primary btn-lg", style="width: 100%;") }}
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

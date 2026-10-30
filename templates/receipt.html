@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+
+{% block title %}Vote Receipt & Cryptographic Seal - SecureVote{% endblock %}
+
+{% block extra_head %}
+<style>
+    #confetti-canvas {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: 9999;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<canvas id="confetti-canvas"></canvas>
+
+<div class="container" style="max-width: 840px; padding-top: 2.5rem; padding-bottom: 4rem;">
+    <div class="glass-card receipt-card">
+        <!-- Success Checkmark -->
+        <div class="success-checkmark">
+            <div class="check-icon"></div>
+        </div>
+
+        <h1 style="font-size: 2rem; font-weight: 800; color: #fff; margin-bottom: 0.5rem;">
+            Ballot Cryptographically Sealed!
+        </h1>
+        <p style="color: var(--text-muted); font-size: 1.05rem; max-width: 600px; margin: 0 auto 1.5rem;">
+            Your vote for <strong>{{ election.title }}</strong> has been sealed with an authenticated symmetric AES-256-GCM cipher and wrapped with the election's RSA-2048 public key.
+        </p>
+
+        {% if receipt_data %}
+            <!-- Receipt Code Box -->
+            <div class="receipt-code-box">
+                <div style="font-size: 0.85rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem;">
+                    Your Secret Anonymous Verification Code
+                </div>
+                <div class="receipt-code" id="receipt-code-display">{{ receipt_data.receipt_code }}</div>
+                <div style="margin-top: 0.75rem;">
+                    <button class="btn btn-outline btn-sm" onclick="copyToClipboard('{{ receipt_data.receipt_code }}', this)">
+                        Copy Verification Code
+                    </button>
+                </div>
+            </div>
+            <p style="font-size: 0.85rem; color: var(--text-dim); margin-bottom: 2rem;">
+                Keep this 16-character code safe. Only its SHA-256 hash is recorded. You can use it anytime on the <a href="{{ url_for('verify') }}" style="color: #38bdf8;">/verify</a> page to mathematically prove your ballot is in the ledger without exposing your vote.
+            </p>
+
+            <!-- Encryption Details Panel (Specification 2.6) -->
+            <div class="encryption-panel" style="text-align: left;">
+                <div class="panel-title">
+                    <svg style="width: 22px; height: 22px; color: var(--primary);" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/>
+                    </svg>
+                    <span>Cryptographic Encryption Details (Hybrid RSA + AES)</span>
+                </div>
+
+                <div class="crypto-field">
+                    <div class="crypto-label">
+                        <span>AES-256-GCM Encrypted Vote Payload (Ciphertext + 16-Byte Auth Tag)</span>
+                        <span style="font-size: 0.75rem; color: #34d399;">Confidentiality & Authenticity</span>
+                    </div>
+                    <div class="crypto-box">
+                        <span>{{ receipt_data.encrypted_vote[:36] }}...{{ receipt_data.encrypted_vote[-20:] }}</span>
+                        <button class="copy-btn" onclick="copyToClipboard('{{ receipt_data.encrypted_vote }}', this)">Copy Full</button>
+                    </div>
+                </div>
+
+                <div class="crypto-field">
+                    <div class="crypto-label">
+                        <span>RSA-2048 OAEP Wrapped AES Symmetric Key (256-bit Encapsulation)</span>
+                        <span style="font-size: 0.75rem; color: #60a5fa;">SHA-256 MGF1</span>
+                    </div>
+                    <div class="crypto-box">
+                        <span>{{ receipt_data.encrypted_aes_key[:36] }}...{{ receipt_data.encrypted_aes_key[-20:] }}</span>
+                        <button class="copy-btn" onclick="copyToClipboard('{{ receipt_data.encrypted_aes_key }}', this)">Copy Full</button>
+                    </div>
+                </div>
+
+                <div class="crypto-field">
+                    <div class="crypto-label">
+                        <span>Randomized 96-Bit Initialization Vector (Nonce)</span>
+                        <span style="font-size: 0.75rem; color: var(--text-dim);">12 Bytes Base64</span>
+                    </div>
+                    <div class="crypto-box">
+                        <span>{{ receipt_data.nonce }}</span>
+                        <button class="copy-btn" onclick="copyToClipboard('{{ receipt_data.nonce }}', this)">Copy</button>
+                    </div>
+                </div>
+
+                <div class="crypto-field">
+                    <div class="crypto-label">
+                        <span>Ballot SHA-256 Hash Chain Block</span>
+                        <span style="font-size: 0.75rem; color: #f59e0b;">Ballot #{{ receipt_data.ballot_id }}</span>
+                    </div>
+                    <div class="crypto-box">
+                        <span style="color: #a78bfa;">{{ receipt_data.ballot_hash }}</span>
+                        <button class="copy-btn" onclick="copyToClipboard('{{ receipt_data.ballot_hash }}', this)">Copy</button>
+                    </div>
+                </div>
+
+                <div class="crypto-field" style="margin-bottom: 0;">
+                    <div class="crypto-label">
+                        <span>Predecessor Ballot Hash Link (prev_hash)</span>
+                        <span style="font-size: 0.75rem; color: var(--text-dim);">Genesis / Predecessor</span>
+                    </div>
+                    <div class="crypto-box">
+                        <span style="color: #94a3b8;">{{ receipt_data.prev_hash }}</span>
+                        <button class="copy-btn" onclick="copyToClipboard('{{ receipt_data.prev_hash }}', this)">Copy</button>
+                    </div>
+                </div>
+            </div>
+        {% else %}
+            <!-- Fallback if user navigated back after session cleared -->
+            <div style="background: rgba(15, 23, 42, 0.7); border: 1px solid var(--card-border); border-radius: var(--radius-md); padding: 1.5rem; margin: 1.5rem 0;">
+                <p style="color: #cbd5e1; font-size: 0.95rem; margin-bottom: 1rem;">
+                    You have already cast a certified ballot in this election on {{ has_voted.voted_at }}.
+                </p>
+                <p style="color: var(--text-muted); font-size: 0.85rem;">
+                    To protect strict ballot anonymity, the database stores zero association between your citizen account and the encrypted ballot. Use your 16-character receipt code anytime to verify ballot integrity.
+                </p>
+            </div>
+        {% endif %}
+
+        <div style="display: flex; justify-content: center; gap: 1rem; margin-top: 2rem;">
+            <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">
+                Return to Dashboard
+            </a>
+            <a href="{{ url_for('verify') }}" class="btn btn-primary">
+                Test Ballot Verification &rarr;
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

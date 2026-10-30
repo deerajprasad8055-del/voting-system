@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+
+{% block title %}Official Tally Results - {{ election.title }} - SecureVote{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width: 860px; padding-top: 2.5rem; padding-bottom: 4rem;">
+    <!-- Breadcrumb / Back Navigation -->
+    <div style="margin-bottom: 1.5rem;">
+        <a href="{{ url_for('dashboard' if current_user else 'index') }}" style="color: var(--text-muted); font-size: 0.9rem; display: inline-flex; align-items: center; gap: 0.4rem;">
+            &larr; Back to Dashboard
+        </a>
+    </div>
+
+    <div class="glass-card results-card">
+        <!-- Header -->
+        <div style="text-align: center; margin-bottom: 2rem;">
+            <span class="status-badge status-closed" style="margin-bottom: 0.75rem;">
+                &#x25CF; Certified Election Results (Closed)
+            </span>
+            <h1 style="font-size: 2.25rem; font-weight: 800; color: #fff; margin-bottom: 0.5rem;">
+                {{ election.title }}
+            </h1>
+            <p style="color: var(--text-muted); font-size: 1rem; max-width: 650px; margin: 0 auto;">
+                {{ election.description }}
+            </p>
+        </div>
+
+        {% if tallied %}
+            <!-- Winner Banner -->
+            {% if tally.winner_name and tally.total_votes > 0 %}
+                <div class="winner-banner">
+                    <div class="winner-trophy">&#x1F3C6;</div>
+                    <div>
+                        <div style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; color: #fbbf24; font-weight: 700;">
+                            Official Electoral Winner
+                        </div>
+                        <div style="font-size: 1.6rem; font-weight: 800; color: #fff;">
+                            {{ tally.winner_name }}
+                        </div>
+                        <div style="color: #fde68a; font-size: 0.95rem;">
+                            {{ tally.winner_party }}
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+
+            <!-- Vote Counts Bar Chart (Pure CSS) -->
+            <div style="margin: 2rem 0;">
+                <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 1.25rem; border-bottom: 1px solid rgba(255, 255, 255, 0.08); padding-bottom: 0.75rem;">
+                    <h3 style="font-size: 1.2rem; color: #fff; margin: 0;">Candidate Breakdown</h3>
+                    <div style="font-size: 0.9rem; color: #38bdf8; font-weight: 600;">
+                        Total Certified Ballots: {{ tally.total_votes }}
+                    </div>
+                </div>
+
+                {% for cand in results.candidates %}
+                    <div class="candidate-result-row">
+                        <div class="result-info">
+                            <div>
+                                <span style="color: #fff; font-weight: 700;">{{ cand.name }}</span>
+                                {% if cand.party %}
+                                    <span style="font-size: 0.8rem; color: var(--text-dim); margin-left: 0.4rem;">({{ cand.party }})</span>
+                                {% endif %}
+                                {% if loop.first and tally.total_votes > 0 %}
+                                    <span style="font-size: 0.75rem; background: rgba(245, 158, 11, 0.2); color: #fbbf24; padding: 2px 6px; border-radius: 4px; margin-left: 6px;">
+                                        &#x2714; Winner
+                                    </span>
+                                {% endif %}
+                            </div>
+                            <div>
+                                <strong style="color: #fff;">{{ cand.votes }}</strong> votes
+                                <span style="color: var(--text-muted); font-size: 0.85rem; margin-left: 0.35rem;">({{ cand.percentage }}%)</span>
+                            </div>
+                        </div>
+
+                        <div class="progress-track">
+                            <div class="progress-fill {% if loop.first and tally.total_votes > 0 %}winner-fill{% endif %}" 
+                                 style="width: {{ cand.percentage }}%;"></div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+
+            <!-- Cryptographic Verification Badge -->
+            <div style="background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(99, 102, 241, 0.3); border-radius: var(--radius-sm); padding: 1.25rem; margin-top: 2rem; display: flex; align-items: center; gap: 0.75rem;">
+                <svg style="width: 24px; height: 24px; color: #34d399; flex-shrink: 0;" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/>
+                </svg>
+                <div style="font-size: 0.85rem; color: #cbd5e1; line-height: 1.5;">
+                    <strong>Cryptographic Audit Passed:</strong> All {{ tally.total_votes }} votes were individually authenticated against the SHA-256 hash chain, unwrapped using the election's RSA-2048 private key, and validated via 128-bit AES-GCM authentication tags.
+                    <div style="font-size: 0.75rem; color: var(--text-dim); margin-top: 0.25rem;">
+                        Certified at: {{ tally.tallied_at }}
+                    </div>
+                </div>
+            </div>
+
+        {% else %}
+            <!-- Pending Tally Notice -->
+            <div style="text-align: center; padding: 2.5rem 1rem;">
+                <div style="font-size: 2.5rem; margin-bottom: 1rem;">&#x23F3;</div>
+                <h3 style="font-size: 1.35rem; color: #fff; margin-bottom: 0.5rem;">Official Tally in Progress</h3>
+                <p style="color: var(--text-muted); font-size: 0.95rem; max-width: 500px; margin: 0 auto 1.5rem;">
+                    Voting for this election has closed. The election administrator must execute the cryptographic chain audit and private key decryption before final numbers are published.
+                </p>
+                {% if current_user and current_user.role == 'admin' %}
+                    <a href="{{ url_for('admin_tally_election', election_id=election.id) }}" class="btn btn-primary">
+                        Execute Cryptographic Tally Now &rarr;
+                    </a>
+                {% endif %}
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+

@@ -1,0 +1,164 @@
+{% extends "base.html" %}
+
+{% block title %}Administrator Dashboard — {{ app_name }}{% endblock %}
+
+{% block content %}
+<div style="margin-bottom: 2rem;">
+  <div style="display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 1rem;">
+    <div>
+      <h1 style="font-size: 2rem; font-weight: 700; margin-bottom: 0.25rem;">Administrator Operations</h1>
+      <p style="color: var(--text-muted);">Manage elections, register candidates, audit voter activity, and tally results.</p>
+    </div>
+    <div>
+      <a href="{{ url_for('admin.create_election') }}" class="btn btn-primary">
+        + Create New Election
+      </a>
+    </div>
+  </div>
+</div>
+
+<!-- Admin Stats Overview -->
+<div class="grid-3" style="margin-bottom: 2rem;">
+  <div class="stat-card">
+    <div class="stat-icon" style="background: rgba(99, 102, 241, 0.15); color: #818cf8;">🗳️</div>
+    <div>
+      <div class="stat-val">{{ elections | length }}</div>
+      <div class="stat-label">Total Elections</div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon" style="background: rgba(16, 185, 129, 0.15); color: #34d399;">👥</div>
+    <div>
+      <div class="stat-val">{{ total_voters }}</div>
+      <div class="stat-label">Registered Voters</div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon" style="background: rgba(6, 182, 212, 0.15); color: #22d3ee;">📦</div>
+    <div>
+      <div class="stat-val">{{ total_ballots }}</div>
+      <div class="stat-label">Encrypted Ballots Stored</div>
+    </div>
+  </div>
+</div>
+
+<!-- Elections Table -->
+<div class="card" style="margin-bottom: 2.5rem;">
+  <div class="card-header">
+    <h2 class="card-title">All Elections</h2>
+    <span style="font-size: 0.85rem; color: var(--text-dim);">Live Status & Lifecycle Controls</span>
+  </div>
+
+  {% if not elections %}
+    <p style="color: var(--text-muted); text-align: center; padding: 2rem 0;">No elections created yet. Click "+ Create New Election" to begin.</p>
+  {% else %}
+    <div class="table-responsive">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Election Title</th>
+            <th>Status</th>
+            <th>Voting Window (UTC)</th>
+            <th>Ballots</th>
+            <th>Candidates</th>
+            <th style="text-align: right;">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for el in elections %}
+            <tr>
+              <td style="font-family: var(--font-mono); color: var(--text-dim);">#{{ el.id }}</td>
+              <td style="font-weight: 600; color: #fff;">{{ el.title }}</td>
+              <td>
+                <span class="badge badge-{{ el.status }}">{{ el.status | upper }}</span>
+              </td>
+              <td style="font-size: 0.85rem; color: var(--text-muted);">
+                {{ el.start_time.strftime('%Y-%m-%d %H:%M') }}<br>
+                {{ el.end_time.strftime('%Y-%m-%d %H:%M') }}
+              </td>
+              <td style="font-family: var(--font-mono); font-weight: 600;">{{ el.ballots | length }}</td>
+              <td>{{ el.candidates | length }}</td>
+              <td style="text-align: right;">
+                <div style="display: flex; gap: 0.4rem; justify-content: flex-end; flex-wrap: wrap;">
+                  <!-- Manage Candidates if Draft -->
+                  {% if el.status in ['draft', 'open'] %}
+                    <a href="{{ url_for('admin.manage_candidates', election_id=el.id) }}" class="btn btn-secondary btn-sm" title="Manage Candidates">
+                      👥 Candidates
+                    </a>
+                  {% endif %}
+
+                  <!-- Status Change Actions -->
+                  {% if el.status == 'draft' %}
+                    <form method="POST" action="{{ url_for('admin.change_status', election_id=el.id, new_status='open') }}" style="display: inline;" data-confirm="Open this election for voting?">
+                      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                      <button type="submit" class="btn btn-success btn-sm">▶ Open</button>
+                    </form>
+                  {% elif el.status == 'open' %}
+                    <form method="POST" action="{{ url_for('admin.change_status', election_id=el.id, new_status='closed') }}" style="display: inline;" data-confirm="Close this election? Voters will no longer be able to cast ballots.">
+                      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                      <button type="submit" class="btn btn-danger btn-sm">⏹ Close</button>
+                    </form>
+                  {% elif el.status == 'closed' %}
+                    <a href="{{ url_for('admin.tally', election_id=el.id) }}" class="btn btn-primary btn-sm">
+                      🔓 Tally & Sign
+                    </a>
+                  {% elif el.status == 'tallied' %}
+                    <a href="{{ url_for('admin.results', election_id=el.id) }}" class="btn btn-primary btn-sm">
+                      📊 Results
+                    </a>
+                  {% endif %}
+
+                  <!-- Verify Integrity Button -->
+                  <a href="{{ url_for('admin.verify_integrity', election_id=el.id) }}" class="btn btn-secondary btn-sm" title="Verify Cryptographic Hash Chain">
+                    ⛓️ Verify Chain
+                  </a>
+                </div>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% endif %}
+</div>
+
+<!-- Recent Audit Trail Snapshot -->
+<div class="card">
+  <div class="card-header">
+    <h3 class="card-title">Recent System Audit Events</h3>
+    <a href="{{ url_for('admin.audit_logs') }}" style="color: var(--primary); font-size: 0.9rem; text-decoration: none;">View Full Audit Trail →</a>
+  </div>
+
+  <div class="table-responsive">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Timestamp (UTC)</th>
+          <th>Action</th>
+          <th>Actor</th>
+          <th>Details</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for log in recent_logs %}
+          <tr>
+            <td style="font-family: var(--font-mono); font-size: 0.8rem; color: var(--text-dim);">
+              {{ log.timestamp.strftime('%Y-%m-%d %H:%M:%S') }}
+            </td>
+            <td>
+              <span class="hash-badge" style="font-size: 0.78rem;">{{ log.action }}</span>
+            </td>
+            <td style="font-size: 0.85rem; color: #cbd5e1;">
+              {{ log.actor_email or 'System' }}
+            </td>
+            <td style="font-size: 0.85rem; color: var(--text-muted);">
+              {{ log.details or '-' }}
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

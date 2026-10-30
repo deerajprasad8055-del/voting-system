@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+
+{% block title %}Voter Dashboard - SecureVote{% endblock %}
+
+{% block content %}
+<div class="container" style="padding-top: 2.5rem; padding-bottom: 4rem;">
+    <!-- Welcome Header -->
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 2.5rem;">
+        <div>
+            <h1 style="font-size: 2rem; font-weight: 800; color: #fff;">Electoral Dashboard</h1>
+            <p style="color: var(--text-muted); font-size: 1rem;">
+                Certified Citizen: <strong>{{ current_user.full_name }}</strong> (Voter ID: <code style="color: #38bdf8;">{{ current_user.voter_id }}</code>)
+            </p>
+        </div>
+        <div>
+            <a href="{{ url_for('verify') }}" class="btn btn-outline">
+                <svg style="width:16px; height:16px;" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+                </svg>
+                Verify a Ballot Receipt
+            </a>
+        </div>
+    </div>
+
+    <!-- Elections Grid -->
+    <h2 style="font-size: 1.35rem; color: #fff; margin-bottom: 1.25rem; display:flex; align-items:center; gap:0.5rem;">
+        <svg style="width:20px; height:20px; color:var(--primary);" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/>
+        </svg>
+        Electoral Contests
+    </h2>
+
+    {% if not elections %}
+        <div class="glass-card" style="text-align: center; padding: 3rem;">
+            <p style="color: var(--text-muted); font-size: 1.1rem;">No elections are currently scheduled in the system.</p>
+        </div>
+    {% else %}
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 1.5rem;">
+            {% for el in elections %}
+                <div class="glass-card glass-card-interactive" style="display: flex; flex-direction: column; justify-content: space-between;">
+                    <div>
+                        <!-- Status Bar -->
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                            <span class="status-badge status-{{ el.status }}">
+                                {% if el.status == 'open' %}&#x25CF; Active Voting
+                                {% elif el.status == 'draft' %}&#x25CF; Scheduled (Draft)
+                                {% else %}&#x25CF; Closed
+                                {% endif %}
+                            </span>
+
+                            {% if el.has_voted %}
+                                <span style="display:inline-flex; align-items:center; gap:4px; font-size:0.8rem; font-weight:700; color:#34d399; background:rgba(16,185,129,0.15); padding:3px 8px; border-radius:9999px; border:1px solid rgba(16,185,129,0.3);">
+                                    <svg style="width:12px; height:12px;" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg>
+                                    You have already voted &#x2714;
+                                </span>
+                            {% endif %}
+                        </div>
+
+                        <h3 style="font-size: 1.35rem; font-weight: 700; color: #fff; margin-bottom: 0.65rem;">
+                            {{ el.title }}
+                        </h3>
+
+                        <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1.25rem; line-height: 1.5;">
+                            {{ el.description or "No description provided." }}
+                        </p>
+
+                        <div style="display: flex; gap: 1.25rem; font-size: 0.85rem; color: var(--text-dim); margin-bottom: 1.5rem;">
+                            <div>
+                                <strong style="color: #cbd5e1;">Candidates:</strong> {{ el.candidate_count }}
+                            </div>
+                            <div>
+                                <strong style="color: #cbd5e1;">Ballots Cast:</strong> {{ el.total_votes_cast }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div style="border-top: 1px solid rgba(255, 255, 255, 0.08); padding-top: 1rem; display: flex; gap: 0.75rem;">
+                        {% if el.status == 'open' %}
+                            {% if el.has_voted %}
+                                <button class="btn btn-secondary btn-sm" disabled style="opacity: 0.6; flex: 1;">
+                                    Vote Recorded &#x2714;
+                                </button>
+                                <a href="{{ url_for('receipt', election_id=el.id) }}" class="btn btn-outline btn-sm">
+                                    View Receipt
+                                </a>
+                            {% else %}
+                                <a href="{{ url_for('vote', election_id=el.id) }}" class="btn btn-primary btn-sm" style="flex: 1;">
+                                    Cast Confidential Vote &rarr;
+                                </a>
+                            {% endif %}
+                        {% elif el.status == 'closed' %}
+                            {% if closed_tallies.get(el.id) %}
+                                <a href="{{ url_for('results', election_id=el.id) }}" class="btn btn-success btn-sm" style="flex: 1;">
+                                    View Official Results &rarr;
+                                </a>
+                            {% else %}
+                                <button class="btn btn-secondary btn-sm" disabled style="flex: 1;">
+                                    Closed (Tally Pending)
+                                </button>
+                            {% endif %}
+                            {% if el.has_voted %}
+                                <a href="{{ url_for('receipt', election_id=el.id) }}" class="btn btn-outline btn-sm">
+                                    Receipt
+                                </a>
+                            {% endif %}
+                        {% else %}
+                            <button class="btn btn-secondary btn-sm" disabled style="flex: 1;">
+                                Voting Not Yet Started
+                            </button>
+                        {% endif %}
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
+

@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+
+{% block title %}Authentication - SecureVote{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="glass-card form-card">
+        <div class="form-header">
+            <h2>Sign In</h2>
+            <p>Access your voter ballot or administrative console</p>
+        </div>
+
+        <!-- Quick Demo Credentials Helper Pills -->
+        <div style="margin-bottom: 1.25rem;">
+            <div style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.4rem; font-weight: 600;">
+                Click to Auto-Fill Demo Credentials:
+            </div>
+            <div class="demo-pills">
+                <span class="demo-pill" onclick="fillLogin('admin@securevote.com', 'Admin@123')">
+                    &#x1F6E1; Admin (admin@securevote.com)
+                </span>
+                <span class="demo-pill" onclick="fillLogin('alice@securevote.com', 'Voter@123')">
+                    &#x1F464; Voter 1: Alice
+                </span>
+                <span class="demo-pill" onclick="fillLogin('bob@securevote.com', 'Voter@123')">
+                    &#x1F464; Voter 2: Bob
+                </span>
+                <span class="demo-pill" onclick="fillLogin('charlie@securevote.com', 'Voter@123')">
+                    &#x1F464; Voter 3: Charlie
+                </span>
+            </div>
+        </div>
+
+        <form method="POST" action="{{ url_for('login', next=request.args.get('next')) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+
+            <div class="form-group">
+                <label for="email" class="form-label">Email Address</label>
+                <input type="email" id="email" name="email" class="form-control" 
+                       value="{{ email or '' }}" placeholder="name@securevote.com" required autocomplete="username">
+            </div>
+
+            <div class="form-group">
+                <label for="password" class="form-label">Password</label>
+                <input type="password" id="password" name="password" class="form-control" 
+                       placeholder="••••••••••••" required autocomplete="current-password">
+                <div class="form-text" style="color: #cbd5e1;">
+                    <svg style="width:12px; height:12px; vertical-align:middle;" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
+                    </svg>
+                    Brute-force protection: Locked for 5 minutes after 5 consecutive failed attempts.
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem;">
+                Secure Sign In &rarr;
+            </button>
+        </form>
+
+        <div style="text-align: center; margin-top: 1.5rem; font-size: 0.9rem; color: var(--text-muted);">
+            New voter? <a href="{{ url_for('register') }}">Register for voting credentials</a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

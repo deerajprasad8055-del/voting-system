@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+
+{% block title %}Cryptographic Chain Integrity Audit - SecureVote Admin{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width: 960px; padding-top: 2.5rem; padding-bottom: 5rem;">
+    <div style="margin-bottom: 1.5rem;">
+        <a href="{{ url_for('admin_dashboard') }}" style="color: var(--text-muted); font-size: 0.9rem; display: inline-flex; align-items: center; gap: 0.4rem;">
+            &larr; Back to Admin Console
+        </a>
+    </div>
+
+    <!-- Header Status Card -->
+    <div class="glass-card" style="margin-bottom: 2rem; border-color: {% if is_valid %}rgba(16, 185, 129, 0.4){% else %}rgba(239, 68, 68, 0.5){% endif %};">
+        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
+            <div>
+                <span class="status-badge {% if is_valid %}status-pass{% else %}status-fail{% endif %}" style="margin-bottom: 0.5rem;">
+                    {% if is_valid %}&#x2714; CHAIN VALID & UNBROKEN{% else %}&#x2718; CHAIN INTEGRITY COMPROMISED{% endif %}
+                </span>
+                <h1 style="font-size: 1.85rem; font-weight: 800; color: #fff; margin: 0.25rem 0 0.5rem;">
+                    SHA-256 Hash Chain Integrity Audit
+                </h1>
+                <p style="color: var(--text-muted); font-size: 0.95rem;">
+                    Contest: <strong>{{ election.title }}</strong> | Ballots Audited: <strong>{{ ballots_checked|length }}</strong>
+                </p>
+            </div>
+
+            {% if election.status == 'closed' %}
+                <a href="{{ url_for('admin_tally_election', election_id=election.id) }}" class="btn btn-primary">
+                    Proceed to Tally &rarr;
+                </a>
+            {% endif %}
+        </div>
+
+        <div style="margin-top: 1.25rem; padding-top: 1rem; border-top: 1px solid rgba(255, 255, 255, 0.08); font-size: 0.9rem; color: {% if is_valid %}#6ee7b7{% else %}#fca5a5{% endif %};">
+            {{ message }}
+        </div>
+    </div>
+
+    <!-- Ballots Ledger Table -->
+    <div class="glass-card">
+        <h2 style="font-size: 1.25rem; color: #fff; margin-bottom: 1.25rem;">
+            Ballot-by-Ballot Chain Verification
+        </h2>
+
+        {% if not ballots_checked %}
+            <p style="color: var(--text-muted); text-align: center; padding: 2rem;">No ballots cast in this election yet.</p>
+        {% else %}
+            <div class="table-responsive">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Ballot #</th>
+                            <th>Status</th>
+                            <th>Previous Hash (prev_hash)</th>
+                            <th>Stored Ballot Hash</th>
+                            <th>Computed Ballot Hash</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for b in ballots_checked %}
+                            <tr>
+                                <td style="font-weight: 700; color: #38bdf8;">#{{ b.id }}</td>
+                                <td>
+                                    <span class="status-badge {% if b.status == 'PASS' %}status-pass{% else %}status-fail{% endif %}">
+                                        {{ b.status }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <div style="font-family: monospace; font-size: 0.75rem; color: #94a3b8; max-width: 180px; word-break: break-all;">
+                                        {{ b.prev_hash }}
+                                    </div>
+                                </td>
+                                <td>
+                                    <div style="font-family: monospace; font-size: 0.75rem; color: #a78bfa; max-width: 180px; word-break: break-all;">
+                                        {{ b.stored_hash }}
+                                    </div>
+                                </td>
+                                <td>
+                                    <div style="font-family: monospace; font-size: 0.75rem; color: {% if b.computed_hash == b.stored_hash %}#34d399{% else %}#f87171{% endif %}; max-width: 180px; word-break: break-all;">
+                                        {{ b.computed_hash or "RECOMPUTATION FAILED" }}
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+

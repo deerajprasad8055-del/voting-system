@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+
+{% block title %}Cryptographic Tally - {{ election.title }} - SecureVote Admin{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width: 860px; padding-top: 2.5rem; padding-bottom: 5rem;">
+    <div style="margin-bottom: 1.5rem;">
+        <a href="{{ url_for('admin_dashboard') }}" style="color: var(--text-muted); font-size: 0.9rem; display: inline-flex; align-items: center; gap: 0.4rem;">
+            &larr; Back to Admin Console
+        </a>
+    </div>
+
+    <!-- Tamper Failure Alert Banner -->
+    {% if tamper_error %}
+        <div class="glass-card" style="border-color: rgba(239, 68, 68, 0.6); background: rgba(127, 29, 29, 0.35); margin-bottom: 2rem;">
+            <div style="display: flex; align-items: flex-start; gap: 1rem;">
+                <div style="width: 44px; height: 44px; border-radius: var(--radius-sm); background: var(--danger); display: flex; align-items: center; justify-content: center; color: #fff; flex-shrink: 0;">
+                    <svg style="width: 26px; height: 26px;" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+                    </svg>
+                </div>
+                <div>
+                    <h2 style="font-size: 1.4rem; color: #fff; margin: 0 0 0.4rem;">
+                        CRITICAL INTEGRITY FAILURE: Tampering Detected!
+                    </h2>
+                    <p style="color: #fca5a5; font-size: 0.95rem; line-height: 1.5; margin-bottom: 0.75rem;">
+                        The cryptographic integrity verification failed. The tally has been <strong>ABORTED IMMEDIATELY</strong> to prevent fraudulent or corrupted votes from altering the certified result.
+                    </p>
+                    <div style="background: #030712; padding: 0.75rem 1rem; border-radius: var(--radius-sm); font-family: monospace; font-size: 0.85rem; color: #f87171; word-break: break-all;">
+                        {{ tamper_error }}
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+
+    <!-- Header Card -->
+    <div class="glass-card" style="margin-bottom: 2rem;">
+        <span class="status-badge status-{{ election.status }}" style="margin-bottom: 0.5rem;">
+            {{ election.status }}
+        </span>
+        <h1 style="font-size: 2rem; font-weight: 800; color: #fff; margin: 0.25rem 0 0.5rem;">
+            Cryptographic Vote Decryption & Tally
+        </h1>
+        <p style="color: var(--text-muted); font-size: 0.95rem;">
+            Contest: <strong>{{ election.title }}</strong>
+        </p>
+
+        <div style="margin-top: 1.5rem; padding-top: 1.25rem; border-top: 1px solid rgba(255, 255, 255, 0.08); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+            <div>
+                <a href="{{ url_for('admin_verify_election', election_id=election.id) }}" class="btn btn-outline btn-sm">
+                    Inspect Full Hash Chain First &rarr;
+                </a>
+            </div>
+
+            <form method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                <button type="submit" class="btn btn-primary" onclick="return confirm('Execute cryptographic decryption? The system will verify the full SHA-256 hash chain and unwrap all ballots with the RSA-2048 private key.');">
+                    <svg style="width:16px; height:16px;" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/>
+                    </svg>
+                    {% if existing_tally %}Re-Run Cryptographic Tally{% else %}Execute Cryptographic Tally{% endif %}
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Tally Breakdown Results -->
+    {% if existing_tally and parsed_results %}
+        <div class="glass-card" style="margin-bottom: 2rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; border-bottom: 1px solid rgba(255, 255, 255, 0.08); padding-bottom: 0.75rem;">
+                <div>
+                    <h2 style="font-size: 1.35rem; color: #fff; margin: 0;">Certified Vote Count</h2>
+                    <div style="font-size: 0.85rem; color: #34d399;">&#x2714; Authenticated Decryption Completed</div>
+                </div>
+                <div>
+                    <a href="{{ url_for('results', election_id=election.id) }}" class="btn btn-success btn-sm">
+                        View Public Results Page &rarr;
+                    </a>
+                </div>
+            </div>
+
+            <!-- Winner Banner -->
+            {% if existing_tally.winner_name and existing_tally.total_votes > 0 %}
+                <div class="winner-banner">
+                    <div class="winner-trophy">&#x1F3C6;</div>
+                    <div>
+                        <div style="font-size: 0.75rem; text-transform: uppercase; color: #fbbf24; font-weight: 700;">Elected Winner</div>
+                        <div style="font-size: 1.45rem; font-weight: 800; color: #fff;">{{ existing_tally.winner_name }}</div>
+                        <div style="color: #fde68a; font-size: 0.85rem;">{{ existing_tally.winner_party }}</div>
+                    </div>
+                </div>
+            {% endif %}
+
+            <div style="margin-top: 1.5rem;">
+                {% for cand in parsed_results.candidates %}
+                    <div class="candidate-result-row">
+                        <div class="result-info">
+                            <div>
+                                <span style="color: #fff; font-weight: 700;">{{ cand.name }}</span>
+                                {% if cand.party %}
+                                    <span style="font-size: 0.8rem; color: var(--text-dim);">({{ cand.party }})</span>
+                                {% endif %}
+                            </div>
+                            <div>
+                                <strong style="color: #fff;">{{ cand.votes }}</strong> votes
+                                <span style="color: var(--text-muted); font-size: 0.85rem;">({{ cand.percentage }}%)</span>
+                            </div>
+                        </div>
+
+                        <div class="progress-track">
+                            <div class="progress-fill {% if loop.first and existing_tally.total_votes > 0 %}winner-fill{% endif %}" 
+                                 style="width: {{ cand.percentage }}%;"></div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+
+            <div style="margin-top: 1.5rem; font-size: 0.8rem; color: var(--text-dim); text-align: right;">
+                Total Ballots Decrypted: {{ existing_tally.total_votes }} | Tallied At: {{ existing_tally.tallied_at }}
+            </div>
+        </div>
+    {% else %}
+        <div class="glass-card" style="text-align: center; padding: 3rem 1.5rem;">
+            <div style="font-size: 2.5rem; margin-bottom: 0.75rem;">&#x1F510;</div>
+            <h3 style="color: #fff; font-size: 1.25rem; margin-bottom: 0.5rem;">Ballots Sealed & Awaiting Tally</h3>
+            <p style="color: var(--text-muted); font-size: 0.95rem; max-width: 540px; margin: 0 auto;">
+                Click "Execute Cryptographic Tally" above. The server will run the hash-chain verification, unwrap each AES key using the RSA private key, check the GCM authentication tag, and compute candidate totals.
+            </p>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
+

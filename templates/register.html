@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+
+{% block title %}Voter Registration - SecureVote{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="glass-card form-card">
+        <div class="form-header">
+            <h2>Voter Registration</h2>
+            <p>Create your certified voting credentials</p>
+        </div>
+
+        <form method="POST" action="{{ url_for('register') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+
+            <div class="form-group">
+                <label for="full_name" class="form-label">Legal Full Name</label>
+                <input type="text" id="full_name" name="full_name" class="form-control" 
+                       value="{{ full_name or '' }}" placeholder="e.g. Eleanor Vance" required autocomplete="name">
+            </div>
+
+            <div class="form-group">
+                <label for="email" class="form-label">Email Address</label>
+                <input type="email" id="email" name="email" class="form-control" 
+                       value="{{ email or '' }}" placeholder="eleanor@example.com" required autocomplete="email">
+            </div>
+
+            <div class="form-group">
+                <label for="voter_id" class="form-label">Government Voter ID / Electoral Number</label>
+                <input type="text" id="voter_id" name="voter_id" class="form-control" 
+                       value="{{ voter_id or '' }}" placeholder="e.g. VOT-8842" required>
+                <div class="form-text">Must be unique and at least 4 alphanumeric characters.</div>
+            </div>
+
+            <div class="form-group">
+                <label for="password" class="form-label">Secret Master Password</label>
+                <input type="password" id="password" name="password" class="form-control" 
+                       placeholder="••••••••••••" required autocomplete="new-password">
+                <div class="strength-meter">
+                    <div id="strength-bar" class="strength-bar"></div>
+                </div>
+                <span id="strength-text" class="strength-text"></span>
+                <div class="form-text">Min 8 chars, including uppercase, lowercase, and numbers.</div>
+            </div>
+
+            <div class="form-group">
+                <label for="confirm_password" class="form-label">Confirm Master Password</label>
+                <input type="password" id="confirm_password" name="confirm_password" class="form-control" 
+                       placeholder="••••••••••••" required autocomplete="new-password">
+            </div>
+
+            <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem;">
+                Complete Registration &rarr;
+            </button>
+        </form>
+
+        <div style="text-align: center; margin-top: 1.5rem; font-size: 0.9rem; color: var(--text-muted);">
+            Already certified? <a href="{{ url_for('login') }}">Log In to Cast Vote</a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

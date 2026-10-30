@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+
+{% block title %}Manage Candidates — {{ election.title }}{% endblock %}
+
+{% block content %}
+<div style="max-width: 900px; margin: 0 auto;">
+  <div style="margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center;">
+    <a href="{{ url_for('admin.dashboard') }}" style="color: var(--text-muted); text-decoration: none; font-size: 0.9rem;">
+      ← Back to Admin Dashboard
+    </a>
+    <div>
+      <span class="badge badge-{{ election.status }}">{{ election.status | upper }}</span>
+    </div>
+  </div>
+
+  <div class="card" style="margin-bottom: 2rem;">
+    <div class="card-header">
+      <div>
+        <h2 class="card-title">{{ election.title }} — Candidate Roster</h2>
+        <p class="form-help">Add candidate profiles to this ballot before opening the election.</p>
+      </div>
+      {% if election.status == 'draft' %}
+        {% if election.candidates | length >= 2 %}
+          <form method="POST" action="{{ url_for('admin.change_status', election_id=election.id, new_status='open') }}" data-confirm="Open this election for voting now?">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="btn btn-success">
+              ▶ Open Election for Voting
+            </button>
+          </form>
+        {% else %}
+          <button class="btn btn-secondary" disabled title="Requires at least 2 candidates">
+            Add at least 2 candidates to open
+          </button>
+        {% endif %}
+      {% endif %}
+    </div>
+
+    <!-- Current Candidates List -->
+    {% if not election.candidates %}
+      <div style="text-align: center; padding: 2rem 0; color: var(--text-muted);">
+        No candidates added yet. Fill out the form below to add the first candidate.
+      </div>
+    {% else %}
+      <div class="grid-2" style="margin-bottom: 1.5rem;">
+        {% for candidate in election.candidates %}
+          <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 1.25rem; display: flex; flex-direction: column; justify-content: space-between;">
+            <div>
+              <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.4rem;">
+                <h4 style="font-size: 1.15rem; color: #fff;">{{ candidate.name }}</h4>
+                <span class="badge" style="background: rgba(6, 182, 212, 0.15); color: #22d3ee; font-size: 0.75rem;">
+                  {{ candidate.party }}
+                </span>
+              </div>
+              <p style="color: var(--text-muted); font-size: 0.88rem;">
+                {{ candidate.description or "No manifesto or bio provided." }}
+              </p>
+            </div>
+
+            {% if election.status == 'draft' %}
+              <div style="margin-top: 1rem; border-top: 1px solid var(--border-color); padding-top: 0.75rem; text-align: right;">
+                <form method="POST" action="{{ url_for('admin.delete_candidate', election_id=election.id, candidate_id=candidate.id) }}" data-confirm="Remove candidate '{{ candidate.name }}'?" style="display: inline;">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                  <button type="submit" class="btn btn-danger btn-sm">Remove Candidate</button>
+                </form>
+              </div>
+            {% endif %}
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+  </div>
+
+  <!-- Add Candidate Form (only if draft or open) -->
+  {% if election.status in ['draft', 'open'] %}
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title">+ Add Candidate to Ballot</h3>
+      </div>
+
+      <form method="POST" action="{{ url_for('admin.manage_candidates', election_id=election.id) }}">
+        {{ form.hidden_tag() }}
+
+        <div class="grid-2">
+          <div class="form-group">
+            {{ form.name.label(class="form-label") }}
+            {{ form.name(class="form-control", placeholder="e.g. Dr. Elena Vance") }}
+            {% for error in form.name.errors %}
+              <div class="form-error">{{ error }}</div>
+            {% endfor %}
+          </div>
+
+          <div class="form-group">
+            {{ form.party.label(class="form-label") }}
+            {{ form.party(class="form-control", placeholder="e.g. Cyber-Liberty Party") }}
+            {% for error in form.party.errors %}
+              <div class="form-error">{{ error }}</div>
+            {% endfor %}
+          </div>
+        </div>
+
+        <div class="form-group">
+          {{ form.description.label(class="form-label") }}
+          {{ form.description(class="form-control", rows=3, placeholder="Candidate manifesto, key policies, or biography...") }}
+          {% for error in form.description.errors %}
+            <div class="form-error">{{ error }}</div>
+          {% endfor %}
+        </div>
+
+        <div style="margin-top: 1rem; text-align: right;">
+          {{ form.submit(class="btn btn-primary") }}
+        </div>
+      </form>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

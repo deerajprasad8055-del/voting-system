@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+
+{% block title %}Verify Ballot Receipt - SecureVote{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width: 760px; padding-top: 3rem; padding-bottom: 5rem;">
+    <!-- Header -->
+    <div style="text-align: center; margin-bottom: 2.5rem;">
+        <div style="width: 56px; height: 56px; border-radius: var(--radius-sm); background: rgba(99, 102, 241, 0.15); border: 1px solid var(--primary-glow); display: flex; align-items: center; justify-content: center; margin: 0 auto 1.25rem; color: #a5b4fc;">
+            <svg style="width: 32px; height: 32px;" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/>
+            </svg>
+        </div>
+        <h1 style="font-size: 2.25rem; font-weight: 800; color: #fff; margin-bottom: 0.75rem;">
+            Zero-Knowledge Ballot Verification
+        </h1>
+        <p style="color: var(--text-muted); font-size: 1.05rem; max-width: 600px; margin: 0 auto;">
+            Enter your 16-character anonymous receipt code below to mathematically verify that your ballot is locked in the tamper-proof hash chain.
+        </p>
+    </div>
+
+    <!-- Verification Lookup Card -->
+    <div class="glass-card" style="margin-bottom: 2rem;">
+        <form method="POST" action="{{ url_for('verify') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+
+            <div class="form-group">
+                <label for="receipt_code" class="form-label">16-Character Receipt Code</label>
+                <input type="text" id="receipt_code" name="receipt_code" class="form-control" 
+                       style="font-family: monospace; font-size: 1.25rem; letter-spacing: 0.08em; text-transform: uppercase;"
+                       placeholder="e.g. SV-A1B2-C3D4-E5F6" value="{{ code_input }}" required autocomplete="off">
+                <div class="form-text">
+                    The receipt code is hashed using SHA-256 to locate your ballot in the ledger without exposing your identity or vote.
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-lg" style="width: 100%; margin-top: 0.75rem;">
+                Verify Inclusion in Cryptographic Ledger &rarr;
+            </button>
+        </form>
+    </div>
+
+    <!-- Verification Results Display -->
+    {% if result %}
+        {% if result.found %}
+            <div class="glass-card" style="border-color: rgba(16, 185, 129, 0.4); background: rgba(6, 78, 59, 0.2); animation: modalScale 0.3s ease;">
+                <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1.25rem;">
+                    <div style="width: 32px; height: 32px; border-radius: 50%; background: var(--success); display: flex; align-items: center; justify-content: center; color: #fff;">
+                        <svg style="width: 18px; height: 18px;" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <h3 style="font-size: 1.25rem; color: #fff; margin: 0;">Ballot Confirmed & Cryptographically Intact</h3>
+                        <div style="font-size: 0.85rem; color: #6ee7b7;">Receipt SHA-256 matched successfully in the immutable chain.</div>
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr; gap: 0.85rem; font-size: 0.9rem;">
+                    <div style="display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255, 255, 255, 0.08); padding-bottom: 0.5rem;">
+                        <span style="color: var(--text-muted);">Electoral Contest:</span>
+                        <strong style="color: #fff;">{{ result.election_title }}</strong>
+                    </div>
+
+                    <div style="display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255, 255, 255, 0.08); padding-bottom: 0.5rem;">
+                        <span style="color: var(--text-muted);">Ledger Ballot Number:</span>
+                        <span style="color: #38bdf8; font-weight: 700;">#{{ result.ballot_id }}</span>
+                    </div>
+
+                    <div style="display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255, 255, 255, 0.08); padding-bottom: 0.5rem;">
+                        <span style="color: var(--text-muted);">Sealed Timestamp:</span>
+                        <span style="color: #cbd5e1;">{{ result.created_at }}</span>
+                    </div>
+
+                    <div>
+                        <div style="color: var(--text-muted); font-size: 0.8rem; margin-bottom: 0.25rem; text-transform: uppercase;">Ballot SHA-256 Hash Block:</div>
+                        <div style="background: #030712; padding: 0.5rem 0.75rem; border-radius: var(--radius-sm); font-family: monospace; font-size: 0.8rem; color: #a78bfa; word-break: break-all;">
+                            {{ result.ballot_hash }}
+                        </div>
+                    </div>
+
+                    <div>
+                        <div style="color: var(--text-muted); font-size: 0.8rem; margin-bottom: 0.25rem; text-transform: uppercase;">Previous Chain Link:</div>
+                        <div style="background: #030712; padding: 0.5rem 0.75rem; border-radius: var(--radius-sm); font-family: monospace; font-size: 0.8rem; color: #94a3b8; word-break: break-all;">
+                            {{ result.prev_hash }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% else %}
+            <div class="glass-card" style="border-color: rgba(239, 68, 68, 0.4); background: rgba(127, 29, 29, 0.2);">
+                <div style="display: flex; align-items: center; gap: 0.75rem;">
+                    <div style="width: 32px; height: 32px; border-radius: 50%; background: var(--danger); display: flex; align-items: center; justify-content: center; color: #fff;">
+                        &times;
+                    </div>
+                    <div>
+                        <h3 style="font-size: 1.15rem; color: #fff; margin: 0;">No Ballot Found</h3>
+                        <div style="font-size: 0.85rem; color: #fca5a5;">
+                            No ballot in the database matches the receipt code <code>{{ result.code }}</code>. Please double-check characters or dashes.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+    {% endif %}
+</div>
+{% endblock %}
+

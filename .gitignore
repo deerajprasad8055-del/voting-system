@@ -1,0 +1,22 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Environments
+venv/
+env/
+.env
+
+# Database
+*.db
+*.sqlite3
+
+# Cryptographic Keys (Keep private keys secure!)
+keys/*.pem
+
+# Testing & Cache
+.pytest_cache/
+.coverage
+htmlcov/
+

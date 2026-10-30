@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}500 Internal Error — {{ app_name }}{% endblock %}
+{% block content %}
+<div style="max-width: 500px; margin: 3rem auto; text-align: center;">
+  <div class="card" style="border-color: var(--danger);">
+    <div style="font-size: 3.5rem; margin-bottom: 0.5rem;">💥</div>
+    <h1 style="font-size: 1.75rem; margin-bottom: 0.5rem; color: #fca5a5;">500 — Server Error</h1>
+    <p style="color: var(--text-muted); margin-bottom: 1.5rem;">
+      An unexpected internal error occurred while processing the request. Details have been safely logged.
+    </p>
+    <a href="{{ url_for('auth.login') }}" class="btn btn-primary">Return to Portal</a>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+
+{% block title %}Hash Chain Integrity Verification — {{ election.title }}{% endblock %}
+
+{% block content %}
+<div style="max-width: 1050px; margin: 0 auto;">
+  <div style="margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center;">
+    <a href="{{ url_for('admin.dashboard') }}" style="color: var(--text-muted); text-decoration: none; font-size: 0.9rem;">
+      ← Back to Admin Dashboard
+    </a>
+    <div>
+      <span class="badge badge-{{ election.status }}">{{ election.status | upper }}</span>
+    </div>
+  </div>
+
+  <div class="card" style="margin-bottom: 2rem;">
+    <div class="card-header">
+      <div>
+        <h2 class="card-title">⛓️ Cryptographic Hash Chain Audit</h2>
+        <p class="form-help">{{ election.title }} (Election #{{ election.id }})</p>
+      </div>
+      <div>
+        <span class="badge" style="background: rgba(255, 255, 255, 0.05); font-family: var(--font-mono);">
+          Total Ballots: {{ ballots | length }}
+        </span>
+      </div>
+    </div>
+
+    <!-- Verification Banner -->
+    {% if is_valid %}
+      <div style="background: var(--success-bg); border: 2px solid rgba(16, 185, 129, 0.4); border-radius: var(--radius-md); padding: 1.5rem; margin-bottom: 2rem; display: flex; align-items: center; gap: 1.25rem;">
+        <div style="font-size: 2.5rem;">🛡️</div>
+        <div>
+          <h3 style="color: #6ee7b7; font-size: 1.2rem; margin-bottom: 0.25rem;">Hash Chain Integrity: PASSED & VERIFIED</h3>
+          <p style="color: #d1fae5; font-size: 0.9rem;">
+            {{ message }} Every stored ballot is mathematically linked in strict chronological order with zero evidence of tampering, modification, or deletion.
+          </p>
+        </div>
+      </div>
+    {% else %}
+      <div style="background: var(--danger-bg); border: 2px solid rgba(239, 68, 68, 0.5); border-radius: var(--radius-md); padding: 1.5rem; margin-bottom: 2rem; display: flex; align-items: center; gap: 1.25rem;">
+        <div style="font-size: 2.5rem;">⚠️</div>
+        <div>
+          <h3 style="color: #fca5a5; font-size: 1.2rem; margin-bottom: 0.25rem;">INTEGRITY VIOLATION DETECTED</h3>
+          <p style="color: #fee2e2; font-size: 0.9rem;">
+            {{ message }} Broken block link index: <strong>#{{ broken_idx }}</strong>. The database records have been modified, corrupted, or deleted out of order!
+          </p>
+        </div>
+      </div>
+    {% endif %}
+
+    <!-- Chain Block Table -->
+    <h3 style="font-size: 1.15rem; margin-bottom: 1rem; color: #fff;">Chronological Ballot Chain Blocks:</h3>
+    
+    {% if not ballots %}
+      <div style="text-align: center; padding: 2.5rem 0; color: var(--text-muted);">
+        No ballots have been cast in this election yet.
+      </div>
+    {% else %}
+      <div class="table-responsive">
+        <table class="table" style="font-size: 0.85rem;">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Created (UTC)</th>
+              <th>Previous Hash (prev_hash)</th>
+              <th>Current Ballot Hash (SHA-256)</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for b in ballots %}
+              {% set is_broken_row = (not is_valid and loop.index0 == broken_idx) %}
+              <tr {% if is_broken_row %}style="background: rgba(239, 68, 68, 0.2);"{% endif %}>
+                <td style="font-family: var(--font-mono); font-weight: 700; color: #fff;">#{{ loop.index0 }}</td>
+                <td style="color: var(--text-muted); font-size: 0.8rem; white-space: nowrap;">
+                  {{ b.created_at.strftime('%Y-%m-%d %H:%M:%S') }}
+                </td>
+                <td>
+                  <span class="hash-badge" style="font-size: 0.75rem; color: #94a3b8; background: rgba(255,255,255,0.03);">
+                    {{ b.prev_hash[:16] }}...{{ b.prev_hash[-8:] if b.prev_hash != 'GENESIS' else '' }}
+                  </span>
+                </td>
+                <td>
+                  <span class="hash-badge" style="font-size: 0.75rem;">
+                    {{ b.ballot_hash[:16] }}...{{ b.ballot_hash[-8:] }}
+                  </span>
+                </td>
+                <td>
+                  {% if is_broken_row %}
+                    <span class="badge" style="background: var(--danger-bg); color: #fca5a5;">Tampered</span>
+                  {% else %}
+                    <span class="badge" style="background: var(--success-bg); color: var(--success);">Valid</span>
+                  {% endif %}
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

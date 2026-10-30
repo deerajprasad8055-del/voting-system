@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+
+{% block title %}{% if action == 'new' %}Create Election{% else %}Edit Election{% endif %} - SecureVote Admin{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width: 680px; padding-top: 3rem; padding-bottom: 5rem;">
+    <div style="margin-bottom: 1.5rem;">
+        <a href="{{ url_for('admin_dashboard') }}" style="color: var(--text-muted); font-size: 0.9rem; display: inline-flex; align-items: center; gap: 0.4rem;">
+            &larr; Back to Admin Console
+        </a>
+    </div>
+
+    <div class="glass-card form-card" style="max-width: 100%; margin: 0;">
+        <div class="form-header">
+            <h2>{% if action == 'new' %}Create New Election{% else %}Edit Draft Election{% endif %}</h2>
+            <p>Configure contest title, description, and schedule</p>
+        </div>
+
+        <form method="POST">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+
+            <div class="form-group">
+                <label for="title" class="form-label">Election Title</label>
+                <input type="text" id="title" name="title" class="form-control" 
+                       value="{{ election.title if election else '' }}" 
+                       placeholder="e.g. 2026 Presidential General Election" required>
+            </div>
+
+            <div class="form-group">
+                <label for="description" class="form-label">Description & Scope</label>
+                <textarea id="description" name="description" class="form-control" 
+                          placeholder="Provide details about the election scope, rules, and candidates...">{{ election.description if election else '' }}</textarea>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                <div class="form-group">
+                    <label for="start_time" class="form-label">Start Time (Optional)</label>
+                    <input type="datetime-local" id="start_time" name="start_time" class="form-control"
+                           value="{{ election.start_time if election and election.start_time else '' }}">
+                </div>
+
+                <div class="form-group">
+                    <label for="end_time" class="form-label">End Time (Optional)</label>
+                    <input type="datetime-local" id="end_time" name="end_time" class="form-control"
+                           value="{{ election.end_time if election and election.end_time else '' }}">
+                </div>
+            </div>
+
+            <div style="margin-top: 1.75rem; display: flex; justify-content: flex-end; gap: 0.75rem;">
+                <a href="{{ url_for('admin_dashboard') }}" class="btn btn-secondary">Cancel</a>
+                <button type="submit" class="btn btn-primary">
+                    {% if action == 'new' %}Create Election & Continue to Candidates &rarr;{% else %}Save Changes{% endif %}
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+

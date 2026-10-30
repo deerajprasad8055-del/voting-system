@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+
+{% block title %}Voter Registration — {{ app_name }}{% endblock %}
+
+{% block content %}
+<div style="max-width: 540px; margin: 1.5rem auto;">
+  <div class="card">
+    <div class="card-header" style="text-align: center; display: block;">
+      <h2 class="card-title">🗳️ Voter Registration</h2>
+      <p class="form-help">Register your official voter identity to participate in online elections.</p>
+    </div>
+
+    <form method="POST" action="{{ url_for('auth.register') }}">
+      {{ form.hidden_tag() }}
+
+      <div class="form-group">
+        {{ form.name.label(class="form-label") }}
+        {{ form.name(class="form-control", placeholder="e.g. Alice Walker") }}
+        {% for error in form.name.errors %}
+          <div class="form-error">{{ error }}</div>
+        {% endfor %}
+      </div>
+
+      <div class="form-group">
+        {{ form.email.label(class="form-label") }}
+        {{ form.email(class="form-control", placeholder="e.g. alice@vote.com") }}
+        {% for error in form.email.errors %}
+          <div class="form-error">{{ error }}</div>
+        {% endfor %}
+      </div>
+
+      <div class="form-group">
+        {{ form.voter_id.label(class="form-label") }}
+        {{ form.voter_id(class="form-control", placeholder="e.g. VOTER-9842") }}
+        {% for error in form.voter_id.errors %}
+          <div class="form-error">{{ error }}</div>
+        {% endfor %}
+        <div class="form-help">Your unique state/institutional identification code.</div>
+      </div>
+
+      <div class="form-group">
+        {{ form.password.label(class="form-label") }}
+        {{ form.password(class="form-control", placeholder="Create a strong password") }}
+        {% for error in form.password.errors %}
+          <div class="form-error">{{ error }}</div>
+        {% endfor %}
+        <div class="form-help">Must be at least 8 chars, including uppercase, lowercase, digit, and special symbol.</div>
+      </div>
+
+      <div class="form-group">
+        {{ form.confirm_password.label(class="form-label") }}
+        {{ form.confirm_password(class="form-control", placeholder="Repeat your password") }}
+        {% for error in form.confirm_password.errors %}
+          <div class="form-error">{{ error }}</div>
+        {% endfor %}
+      </div>
+
+      <div style="margin-top: 1.5rem;">
+        {{ form.submit(class="btn btn-primary", style="width: 100%;") }}
+      </div>
+    </form>
+
+    <div style="margin-top: 1.5rem; text-align: center; border-top: 1px solid var(--border-color); padding-top: 1rem;">
+      <p style="color: var(--text-muted); font-size: 0.9rem;">
+        Already registered? 
+        <a href="{{ url_for('auth.login') }}" style="color: var(--primary); font-weight: 600; text-decoration: none;">Sign in here</a>
+      </p>
+    </div>
+  </div>
+</div>
+{% endblock %}

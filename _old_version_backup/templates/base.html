@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}{{ app_full_title }}{% endblock %}</title>
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- Chart.js for Results -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  
+  <!-- Custom Stylesheet -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  {% block extra_head %}{% endblock %}
+</head>
+<body>
+  <!-- Navbar -->
+  <header class="navbar">
+    <div class="container">
+      <a href="{{ url_for('voter.dashboard') if current_user and not current_user.is_admin else (url_for('admin.dashboard') if current_user and current_user.is_admin else url_for('auth.login')) }}" class="brand">
+        <div class="brand-icon">🔒</div>
+        <span>{{ app_name }}</span>
+      </a>
+
+      <nav>
+        <ul class="nav-links">
+          <li><a href="{{ url_for('voter.verify') }}" class="nav-link">Verify Ballot</a></li>
+          
+          {% if current_user %}
+            {% if current_user.is_admin %}
+              <li><a href="{{ url_for('admin.dashboard') }}" class="nav-link">Admin Dashboard</a></li>
+              <li><a href="{{ url_for('admin.create_election') }}" class="nav-link">New Election</a></li>
+              <li><a href="{{ url_for('admin.audit_logs') }}" class="nav-link">Audit Trail</a></li>
+            {% else %}
+              <li><a href="{{ url_for('voter.dashboard') }}" class="nav-link">Elections</a></li>
+            {% endif %}
+
+            <li>
+              <span class="badge {{ 'badge-admin' if current_user.is_admin else 'badge-open' }}">
+                {{ current_user.role | upper }} ({{ current_user.name }})
+              </span>
+            </li>
+            <li><a href="{{ url_for('auth.logout') }}" class="btn btn-secondary btn-sm">Sign Out</a></li>
+          {% else %}
+            <li><a href="{{ url_for('auth.login') }}" class="nav-link">Sign In</a></li>
+            <li><a href="{{ url_for('auth.register') }}" class="btn btn-primary btn-sm">Register Voter</a></li>
+          {% endif %}
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="main-content">
+    <div class="container">
+      <!-- Flash Messages -->
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          <div class="flash-container">
+            {% for category, message in messages %}
+              <div class="flash-alert flash-{{ category }}">
+                <span>{{ message }}</span>
+              </div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      {% endwith %}
+
+      <!-- Page Content -->
+      {% block content %}{% endblock %}
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      <div>
+        <strong>{{ app_name }}</strong> — Cryptographically Protected E-Voting Infrastructure
+      </div>
+      <div>
+        <span class="hash-badge">AES-256-GCM + RSA-2048 OAEP + SHA-256 Hash Chain</span>
+      </div>
+    </div>
+  </footer>
+
+  <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

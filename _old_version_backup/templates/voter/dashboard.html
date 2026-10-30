@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+
+{% block title %}Voter Dashboard — {{ app_name }}{% endblock %}
+
+{% block content %}
+<div style="margin-bottom: 2rem;">
+  <div style="display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: gap; gap: 1rem;">
+    <div>
+      <h1 style="font-size: 2rem; font-weight: 700; margin-bottom: 0.25rem;">Elections & Ballots</h1>
+      <p style="color: var(--text-muted);">
+        Authenticated as <strong style="color: #fff;">{{ user.name }}</strong> (Voter ID: <span class="hash-badge">{{ user.voter_id }}</span>)
+      </p>
+    </div>
+    <div>
+      <a href="{{ url_for('voter.verify') }}" class="btn btn-secondary">
+        🔍 Verify Ballot Receipt
+      </a>
+    </div>
+  </div>
+</div>
+
+<div class="card" style="margin-bottom: 2rem; background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(6, 182, 212, 0.05)); border-color: rgba(99, 102, 241, 0.3);">
+  <div style="display: flex; align-items: center; gap: 1.25rem; flex-wrap: wrap;">
+    <div style="font-size: 2.5rem;">🛡️</div>
+    <div style="flex: 1;">
+      <h3 style="font-size: 1.15rem; margin-bottom: 0.25rem;">End-to-End Cryptographic Privacy</h3>
+      <p style="color: var(--text-muted); font-size: 0.9rem;">
+        Your vote is encrypted with <strong>AES-256-GCM</strong> directly on the server before database storage. The encryption key is locked with the election's <strong>RSA-2048</strong> public key. Your identity is separated from your ballot to guarantee complete voter anonymity.
+      </p>
+    </div>
+  </div>
+</div>
+
+{% if not elections %}
+  <div class="card" style="text-align: center; padding: 3rem 1.5rem;">
+    <div style="font-size: 3rem; margin-bottom: 1rem;">📭</div>
+    <h3 style="font-size: 1.3rem; margin-bottom: 0.5rem;">No Active Elections Found</h3>
+    <p style="color: var(--text-muted);">There are currently no scheduled elections available for voting.</p>
+  </div>
+{% else %}
+  <div class="grid-2">
+    {% for item in elections %}
+      {% set el = item.election %}
+      <div class="card" style="display: flex; flex-direction: column;">
+        <div class="card-header">
+          <div>
+            <span class="badge badge-{{ el.status }}">{{ el.status | upper }}</span>
+            {% if item.has_voted %}
+              <span class="badge badge-open" style="background: rgba(16, 185, 129, 0.2); margin-left: 0.5rem;">✓ Voted</span>
+            {% endif %}
+          </div>
+          <span style="font-size: 0.8rem; color: var(--text-dim); font-family: var(--font-mono);">ID #{{ el.id }}</span>
+        </div>
+
+        <h3 style="font-size: 1.35rem; margin-bottom: 0.6rem;">{{ el.title }}</h3>
+        <p style="color: var(--text-muted); font-size: 0.92rem; margin-bottom: 1.25rem; flex: 1;">
+          {{ el.description or "No election description provided." }}
+        </p>
+
+        <div style="background: rgba(0,0,0,0.25); border-radius: var(--radius-sm); padding: 0.85rem; margin-bottom: 1.25rem; font-size: 0.85rem;">
+          <div style="display: flex; justify-content: space-between; margin-bottom: 0.35rem;">
+            <span style="color: var(--text-dim);">Voting Period:</span>
+            <span style="color: var(--text-main);">{{ el.start_time.strftime('%b %d, %H:%M') }} — {{ el.end_time.strftime('%b %d, %H:%M UTC') }}</span>
+          </div>
+          <div style="display: flex; justify-content: space-between;">
+            <span style="color: var(--text-dim);">Candidates:</span>
+            <span style="color: var(--text-main);">{{ item.candidate_count }} registered</span>
+          </div>
+        </div>
+
+        <div>
+          {% if item.can_vote %}
+            <a href="{{ url_for('voter.cast_vote', election_id=el.id) }}" class="btn btn-primary" style="width: 100%;">
+              🗳️ Cast Encrypted Vote
+            </a>
+          {% elif item.has_voted %}
+            <div style="display: flex; gap: 0.5rem;">
+              <button class="btn btn-secondary" style="flex: 1;" disabled>
+                ✓ Ballot Already Cast
+              </button>
+              {% if el.status == 'tallied' %}
+                <a href="{{ url_for('voter.results', election_id=el.id) }}" class="btn btn-primary">
+                  View Results
+                </a>
+              {% endif %}
+            </div>
+          {% elif el.status == 'tallied' %}
+            <a href="{{ url_for('voter.results', election_id=el.id) }}" class="btn btn-primary" style="width: 100%;">
+              📊 View Certified Results
+            </a>
+          {% else %}
+            <button class="btn btn-secondary" style="width: 100%;" disabled>
+              Voting Closed
+            </button>
+          {% endif %}
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+{% endif %}
+{% endblock %}

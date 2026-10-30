@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+
+{% block title %}System Audit Ledger - SecureVote Admin{% endblock %}
+
+{% block content %}
+<div class="container" style="padding-top: 2.5rem; padding-bottom: 5rem;">
+    <div style="margin-bottom: 1.5rem;">
+        <a href="{{ url_for('admin_dashboard') }}" style="color: var(--text-muted); font-size: 0.9rem; display: inline-flex; align-items: center; gap: 0.4rem;">
+            &larr; Back to Admin Console
+        </a>
+    </div>
+
+    <!-- Header & Search -->
+    <div class="glass-card" style="margin-bottom: 2rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.25rem;">
+            <div>
+                <h1 style="font-size: 1.85rem; font-weight: 800; color: #fff; margin: 0 0 0.35rem;">
+                    Immutable Security Audit Ledger
+                </h1>
+                <p style="color: var(--text-muted); font-size: 0.9rem;">
+                    Full audit history of administrative events, authentications, vote submissions, and tamper alerts.
+                </p>
+            </div>
+        </div>
+
+        <form method="GET" action="{{ url_for('admin_audit') }}" style="display: flex; gap: 0.75rem;">
+            <input type="text" name="q" value="{{ search_query }}" class="form-control" 
+                   placeholder="Search by action, keyword, email, or IP address..." style="max-width: 450px;">
+            <button type="submit" class="btn btn-primary">Filter</button>
+            {% if search_query %}
+                <a href="{{ url_for('admin_audit') }}" class="btn btn-secondary">Clear</a>
+            {% endif %}
+        </form>
+    </div>
+
+    <!-- Audit Log Table -->
+    <div class="glass-card">
+        <div class="table-responsive">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Log ID</th>
+                        <th>Timestamp (UTC)</th>
+                        <th>Security Action</th>
+                        <th>User Identity</th>
+                        <th>Event Details</th>
+                        <th>Origin IP</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if not audits %}
+                        <tr>
+                            <td colspan="6" style="text-align: center; color: var(--text-muted); padding: 2rem;">
+                                No audit events found matching the criteria.
+                            </td>
+                        </tr>
+                    {% else %}
+                        {% for a in audits %}
+                            <tr>
+                                <td style="font-family: monospace; font-size: 0.8rem; color: var(--text-dim);">#{{ a.id }}</td>
+                                <td style="font-family: monospace; font-size: 0.8rem; color: #94a3b8; white-space: nowrap;">{{ a.created_at }}</td>
+                                <td>
+                                    <span style="font-family: monospace; font-size: 0.8rem; font-weight: 700; color: 
+                                        {% if 'TAMPER' in a.action or 'LOCKED' in a.action %}#f87171
+                                        {% elif 'VOTE' in a.action %}#34d399
+                                        {% elif 'LOGIN' in a.action %}#60a5fa
+                                        {% elif 'TALLIED' in a.action %}#fbbf24
+                                        {% else %}#a78bfa{% endif %};">
+                                        {{ a.action }}
+                                    </span>
+                                </td>
+                                <td style="font-size: 0.85rem; color: #cbd5e1;">
+                                    {{ a.user_email or "System/Unauthenticated" }}
+                                </td>
+                                <td style="font-size: 0.85rem; color: var(--text-muted); max-width: 380px; word-break: break-all;">
+                                    {{ a.details }}
+                                </td>
+                                <td style="font-family: monospace; font-size: 0.8rem; color: var(--text-dim); white-space: nowrap;">
+                                    {{ a.ip or "-" }}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
